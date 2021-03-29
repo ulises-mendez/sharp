@@ -2,6 +2,7 @@
 
 const os = require('os');
 const fs = require('fs');
+const { exec } = require('child_process');
 
 const async = require('async');
 const assert = require('assert');
@@ -72,6 +73,22 @@ async.series({
                 }
               });
           }
+        });
+      }
+    });
+    // squoosh-cli
+    jpegSuite.add('squoosh-cli-file-file', {
+      defer: true,
+      fn: function (deferred) {
+        exec(`./node_modules/.bin/squoosh-cli \
+          --output-dir ${os.tmpdir()} \
+          --resize '{"width":${width},"height":${height},"method":"lanczos3","premultiply":false,"linearRGB":false}' \
+          --mozjpeg '{"quality":80,"progressive":false,"optimize_coding":true,"quant_table":0,trellis_multipass:false}' \
+          "${fixtures.inputJpg}"`, (err) => {
+          if (err) {
+            throw err;
+          }
+          deferred.resolve();
         });
       }
     });
