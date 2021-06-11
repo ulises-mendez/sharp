@@ -1,0 +1,40 @@
+version: 2.1
+
+workflows:
+  build:
+    jobs:
+      - linux-arm64-glibc-node-12:
+          filters:
+            tags:
+              only: /^v.*/
+      - linux-arm64-musl-node-12:
+          filters:
+            tags:
+              only: /^v.*/
+
+jobs:
+  linux-arm64-glibc-node-12:
+    resource_class: arm.medium
+    docker:
+      - image: arm64v8/debian:bullseye
+    steps:
+      - checkout
+      - run: |
+          apt-get update && apt-get install -y build-essential git python3 curl
+          curl -s https://deb.nodesource.com/gpgkey/nodesource.gpg.key | apt-key add -
+          deb https://deb.nodesource.com/node_12.x sid main' >/etc/apt/sources.list.d/nodesource.list
+          apt-get update
+          apt-get install -y nodejs
+      - run: npm install --build-from-source --unsafe-perm
+      - run: npm test
+      - run: "[[ -n $CIRCLE_TAG ]] && npx prebuild --runtime napi --target 5"
+  linux-arm64-musl-node-12:
+    resource_class: arm.medium
+    docker:
+      - image: node:12-alpine3.11
+    steps:
+      - checkout
+      - run: apk add build-base git python3 --update-cache
+      - run: npm install --build-from-source --unsafe-perm
+      - run: npm test
+      - run: "[[ -n $CIRCLE_TAG ]] && npx prebuild --runtime napi --target 5"
